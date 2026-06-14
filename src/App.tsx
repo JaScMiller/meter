@@ -1547,7 +1547,7 @@ function App() {
         const timeoutId = window.setTimeout(() => {
           scheduledAnalyses.delete(line.id)
           void runLineAnalysis(line.id, line.analysis.version, line.text)
-        }, 1000)
+        }, 250)
 
         scheduledAnalyses.set(line.id, {
           timeoutId,
