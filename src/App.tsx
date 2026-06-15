@@ -1140,6 +1140,83 @@ function App() {
   }, [userDefinedStressMap])
 
   useEffect(() => {
+    setSections((current) => {
+      let sectionsChanged = false
+
+      const nextSections = current.map((section) => {
+        let sectionChanged = false
+
+        const nextLines = section.lines.map((line) => {
+          if (line.analysis.units.status !== 'done') {
+            return line
+          }
+
+          let lineChanged = false
+
+          const nextUnits = line.analysis.units.units.map((unit) => {
+            if (unit.kind !== 'word') {
+              return unit
+            }
+
+            const unitWordKey = normalizePronunciationWord(unit.text)
+            const nextCombinedPossibleStresses = combinePossibleStressPatterns(
+              unit.pronunciations.jsonPronunciation.value,
+              unit.pronunciations.dictionaryPronunciation.value,
+              userDefinedStressMap[unitWordKey] ?? [],
+            )
+
+            if (
+              unit.pronunciations.combinedPossibleStresses.value === nextCombinedPossibleStresses.value &&
+              unit.pronunciations.combinedPossibleStresses.reason === nextCombinedPossibleStresses.reason
+            ) {
+              return unit
+            }
+
+            lineChanged = true
+
+            return {
+              ...unit,
+              pronunciations: {
+                ...unit.pronunciations,
+                combinedPossibleStresses: nextCombinedPossibleStresses,
+              },
+            }
+          })
+
+          if (!lineChanged) {
+            return line
+          }
+
+          sectionChanged = true
+          sectionsChanged = true
+
+          return {
+            ...line,
+            analysis: {
+              ...line.analysis,
+              units: {
+                ...line.analysis.units,
+                units: nextUnits,
+              },
+            },
+          }
+        })
+
+        if (!sectionChanged) {
+          return section
+        }
+
+        return {
+          ...section,
+          lines: nextLines,
+        }
+      })
+
+      return sectionsChanged ? nextSections : current
+    })
+  }, [userDefinedStressMap])
+
+  useEffect(() => {
     saveStressPatternDefinitions(stressPatternDefinitions)
   }, [stressPatternDefinitions])
 
